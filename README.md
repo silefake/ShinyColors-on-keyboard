@@ -6,28 +6,30 @@ Userscript which allows some actions to be done by keyboard in https://shinycolo
 
 <br>
 
-> ### Scenario 
-> (communication)
-> |key|description|
-> |---|---|
-> |d|forward dialogue <br> (to be implemented) when Log opened, scroll down
-> |s|toggle dialogue Log|
-> |a|back to previous dialogue <br> (currently with many issues) <br> (to be implemented) when Log opened, scroll up|
-> |-|speed up text typing|
-> |=|speed down text typing|
+### Scenario 
+(communication)
+|key|description|
+|---|---|
+| d | - forward dialogue <br> - (to be implemented) when Log opened, scroll down
+| s | toggle Log|
+| a | - back to previous dialogue <br> (currently with many issues) <br> - (to be implemented) when Log opened, scroll up|
+| - = | speed down/up text typing |
 
 
-```
+> ```
+> nothing
+> ```
 
-```
+### Produce
+|key|description|
+|---|---|
+| q | toggle between produce home page & action layer |
+| w a s d | traverse between actions |
+| e |
 
-> ### Produce ???
-> p <br>
-> p <br>
-> 
 
 <br>
 
 ---
 
-build (bundle) using deno (see `bundle_cmd.txt`), or any other bundle tools.
+build (bundle) using deno bundle (see `bundle_cmd.txt`), or any other bundle tools.
