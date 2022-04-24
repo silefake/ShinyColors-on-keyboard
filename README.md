@@ -1,6 +1,6 @@
 ## ShinyColors-on-keyboard
 
-Userscript which allows some actions to be done by keyboard in https://shinycolors.enza.fun/
+Userscript which allows some actions to be done by keyboard in <a href="https://shinycolors.enza.fun/">アイドルマスター シャイニーカラーズ（THE IDOLM@STER SHINY COLORS）</a>
 
 ---
 
