@@ -100,7 +100,6 @@ const singleton = {
 
 };
 
-
 // Modify prototype function before (new SceneManager).init() call, after where Object.freeze() happens 
 function probe(Mgr) {
   let probe_list = ["find", "loadScene", "pushScene", "replaceScene"];
@@ -119,56 +118,60 @@ function probe(Mgr) {
 }
 
 
-console.info("%c SCif ", console_style("#994AC4"), SCif);
-
-
-
 const cmm = {
+  cache: new Map(), 
+
   _check_structure: function(target, checklist) {
+    if ( checklist === null ) {
+      return "";
+    }
     let errmsg = "";
     Object.entries(checklist)
       .forEach(([key, value]) => {
-        if ( !(key in target) ) {
+        if ( !target || !(key in target) ) {
           errmsg += key;
           errmsg += "\n";
         }
-        else if ( value !== null ) {
+        else if ( typeof value === "string" && value !== target[key] ) {
+          errmsg += key;
+          errmsg += "\n";
+        }
+        else if ( typeof value === "object" ) {
           let sub = this._check_structure(target[key], value);
           if (sub !== "") {
             errmsg += key;
             errmsg += "\n";
             errmsg += sub.split("\n")
-                         
+                         .slice(0, -1)
                          .map((line) => "  " + line)
                          .join("\n");
+            errmsg += "\n";
           }
         }
       });
     return errmsg;
   }, 
 
-  log: function(message = "") {
-    if (message !== "") {
-      console.info("check failed: \n" + message);
-    }
-  }, 
-
   require: function(name) {
+    if ( this.cache.has(name) && !this.cache.get(name)._destroyed ) {
+      return this.cache.get(name);
+    }
+
     let ret = null;
-    let structure = null;
+    let checklist = null;
 
     switch (name) {
       case "adv_player":
-        ret = singleton.scene_manager.currentScene.children[0] || null;
-        structure = {
-          _isOpenedLog: null, 
+        checklist = {
           scenarioLogLayer: {
             _stackedTracks: null, 
             stackTrack: null, 
             closeButton: null
           }, 
           mainController: {
-            _scenarioMenu: null
+            _scenarioMenu: {
+              _base: null
+            }
           }, 
           _trackManager: {
             _current: null, 
@@ -191,7 +194,63 @@ const cmm = {
             control: null
           }
         };
+
+        let checklist_test = {
+          _isOpenedLog: null, 
+          scenarioLogLayer: {
+            _logPop: {
+              _base: null, 
+              _scrollRect: null
+            }
+          }
+        };
+
+        ret = singleton.scene_manager.currentScene.children[0] || null;
+        let tmp = this._check_structure(ret, checklist);
+        if ( ret === null || tmp !== "") {
+          ret = singleton.scene_manager.currentScene._frontLayer?.children[0]?.children[0] || null;
+        }
+        tmp = this._check_structure(ret, checklist_test);
+        if ( tmp !== "" ) {
+          console.info("check failed: \n" + tmp);
+        }
         break;
+      case "hide_button":
+        checklist = {
+          name: "hideButton"
+        }
+        ret = this.require("adv_player").mainController._scenarioMenu._base.children[0];
+        break;
+      case "log_button":
+        checklist = {
+          name: "logButton"
+        }
+        ret = this.require("adv_player").mainController._scenarioMenu._base.children[1];
+        break;
+      case "auto_button":
+        checklist = {
+          name: "autoButton"
+        }
+        ret = this.require("adv_player").mainController._scenarioMenu._base.children[2];
+        break;
+      case "log_close_button":
+        ret = this.require("adv_player").scenarioLogLayer.closeButton;
+        break;
+      case "log_scroll_rect":
+        checklist = {
+          updateContainerPos: null, 
+          _getDestinationPos: null, 
+          _checkBorder: null
+        };
+        ret = this.require("adv_player").scenarioLogLayer._logPop._scrollRect;
+        break;
+      case "main_controller":
+        ret = this.require("adv_player").mainController;
+        break;
+      case "scenario_interaction_layer":
+        ret = this.require("adv_player")._interactionLayer;
+        break;
+
       case "producing_action_tab_list":
         ret = singleton.scene_manager.currentScene._mainLayer?._actionLayer?._actionTypeTabList || null;
         break;
@@ -216,13 +275,19 @@ const cmm = {
       throw "Update";
     }
     
-    if (structure !== null) {
-      this.log( this._check_structure(ret, structure) );
+    const errmsg = this._check_structure(ret, checklist);
+    if ( errmsg !== "" ) {
+      console.info("check failed: \n" + errmsg);
     }
+
+    this.cache.set(name, ret);
     return ret;
   }
 
 };
+
+console.info("%c SCif ", console_style("#994AC4"), SCif);
+console.info("cmm ", cmm);
 
 
 export { singleton, init, cmm };

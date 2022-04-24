@@ -4,15 +4,16 @@ Userscript which allows some actions to be done by keyboard in https://shinycolo
 
 ---
 
-<br>
 
 ### Scenario 
 (communication)
 |key|description|
 |---|---|
-| d | - forward dialogue <br> - (to be implemented) when Log opened, scroll down
-| s | toggle Log|
-| a | - back to previous dialogue <br> (currently with many issues) <br> - (to be implemented) when Log opened, scroll up|
+| d | - forward dialogue <br> - when Log opened, scroll down |
+| a | - back to previous dialogue (currently has many issues) <br> - when Log opened, scroll up |
+| s | toggle Log |
+| q | toggle auto mode |
+| e | toggle hide ui (3 phases, not completed yet) |
 | - = | speed down/up text typing |
 
 

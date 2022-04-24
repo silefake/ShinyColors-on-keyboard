@@ -7,11 +7,14 @@ const scenario = {
 
   speed_alter: [0.6, 0.8, 1, 1.4, 2, 2.8, 3.8, 5, 6.4], 
   speed_index: 2, 
+  log_scrolling: false, 
+  keyflags: 0, 
+  log_scroll_factor: 1, 
   
   hook: function() {
     singleton.adv_helper.orig_createAdvPlayer = singleton.adv_helper.createAdvPlayer;
     singleton.adv_helper.createAdvPlayer = function(e) {
-      let ret = singleton.adv_helper.orig_createAdvPlayer(e);
+      const ret = singleton.adv_helper.orig_createAdvPlayer(e);
       console.info("adv_helper.createAdvPlayer() -> ", ret);
       scenario.hook_components(ret);
       scenario.adv_player = ret;
@@ -35,22 +38,86 @@ const scenario = {
     }   
   }, 
 
-  handler: function(key) {
+  handle_keydown: function(key) {
     switch (key) {
       case "-":
-        this.text_speed_down();
+        if ( !cmm.require("adv_player")._isOpenedLog ) {
+          this.text_speed_down();
+        }
         break;
       case "=":
-        this.text_speed_up();
+        if ( !cmm.require("adv_player")._isOpenedLog ) {
+          this.text_speed_up();
+        }
         break;
       case "s":
-        this.toggle_comm_log();
+        if ( this.log_scrolling === false ) {
+          this.toggle_comm_log();
+        }
+        break;
+      case "q":
+        // To be fixed: 
+        // auto mode also has effect on text speed
+        if ( !cmm.require("adv_player")._isOpenedLog ) {
+          this.toggle_auto();
+        }
+        break;
+      case "e":
+        if ( !cmm.require("adv_player")._isOpenedLog ) {
+          this.toggle_hide();
+        }
         break;
       case "d":
-        this.comm_forward();
+        if ( cmm.require("adv_player")._isOpenedLog ) {
+          this.keyflags |= 0x1;
+          this.log_scroll_factor = -1;
+          // Potential issue: 
+          // If one keyup then one keydown are triggered in a very short period 
+          // (< the interval between two requestAnimationFrame() calls), 
+          // there's a possibility to call second log_scroll() while 
+          // the first one still hasn't jumped out of the loop, 
+          // which means two requestAnimationFrame() will run simultaneously 
+          // and thus the position will be updated twice faster
+          if ( this.log_scrolling === false ) {
+            this.log_scrolling = true;
+            this.log_scroll();
+          }
+        } else {
+          this.comm_forward();
+        }
         break;
       case "a":
-        this.comm_backward();
+        if ( cmm.require("adv_player")._isOpenedLog ) {
+          this.keyflags |= 0x2;
+          this.log_scroll_factor = 1;
+          if ( this.log_scrolling === false ) {
+            this.log_scrolling = true;
+            this.log_scroll();
+          }
+        } else {
+          this.comm_backward();
+        }
+        break;
+    }
+  }, 
+
+  handle_keyup: function(key) {
+    switch (key) {
+      case "d":
+        this.keyflags &= ~0x1;
+        if ( (this.keyflags & 0x2) > 0 ) {
+          this.log_scroll_factor = 1;
+        } else {
+          this.log_scrolling = false;
+        }
+        break;
+      case "a":
+        this.keyflags &= ~0x2;
+        if ( (this.keyflags & 0x1) > 0 ) {
+          this.log_scroll_factor = -1;
+        } else {
+          this.log_scrolling = false;
+        }
         break;
     }
   }, 
@@ -68,20 +135,47 @@ const scenario = {
   }, 
 
   toggle_comm_log: function() {
-    let adv_player = cmm.require("adv_player");
+    const adv_player = cmm.require("adv_player");
     adv_player._isOpenedLog ? 
-      adv_player.scenarioLogLayer.closeButton.emit("tap") :
-      adv_player.mainController._scenarioMenu.emit("openLog");
+      cmm.require("log_close_button").emit("tap") :
+      cmm.require("log_button").emit("tap");
+  }, 
+
+  toggle_auto: function() {
+    const auto_button = cmm.require("auto_button");
+    auto_button.emit("tap", { target: auto_button });
+  }, 
+
+  toggle_hide: function() {
+    cmm.require("hide_button").emit("tap");
+  }, 
+
+  log_scroll: function() {
+    const log_scroll_rect = cmm.require("log_scroll_rect");
+    function scroll(e) {
+      let t = 15 * this.log_scroll_factor;
+      log_scroll_rect.updateContainerPos(log_scroll_rect._getDestinationPos(t));
+      log_scroll_rect._checkBorder();
+      if ( this.log_scrolling ) {
+        window.requestAnimationFrame(scroll.bind(this));
+      }
+    }
+    window.requestAnimationFrame(scroll.bind(this));
+  }, 
+
+  pin: function() {
+
   }, 
 
   comm_forward: function() {
-    let adv_player = cmm.require("adv_player");
-    if (adv_player._isOpenedLog) return;
-    adv_player._interactionLayer.emit("tap");
+    const adv_player = cmm.require("adv_player");
+    if ( !adv_player._isOpenedLog ) {
+      cmm.require("scenario_interaction_layer").emit("tap");
+    }
   }, 
 
   comm_backward: function() {
-    let p = cmm.require("adv_player");
+    const p = cmm.require("adv_player");
     if (p._isOpenedLog) return;
     if (p.scenarioLogLayer._stackedTracks.length <= 1) {
       return;
